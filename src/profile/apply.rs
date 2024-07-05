@@ -28,7 +28,14 @@ pub fn apply(profile_name: Option<String>) -> Result<()> {
             );
         }
         None => {
-            let repo = Repository::open_from_env().expect("Not in a git repository");
+            let repo = Repository::open_from_env();
+            let repo = match repo {
+                Ok(repo) => repo,
+                Err(e) => {
+                    eprintln!("   {} - {}", style("ERROR").red(), style("Not a git repository!").bold());
+                    return Ok(());
+                }
+            };
 
             let remote = repo.find_remote("origin")?;
             let url = RepoUrl::from_url(&Url::parse(remote.url().expect("No remote url"))?)?;
