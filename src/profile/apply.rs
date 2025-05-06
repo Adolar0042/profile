@@ -32,13 +32,24 @@ pub fn apply(profile_name: Option<String>) -> Result<()> {
             let repo = match repo {
                 Ok(repo) => repo,
                 Err(e) => {
-                    eprintln!("   {} - {}", style("ERROR").red(), style("Not a git repository!").bold());
+                    eprintln!(
+                        "   {} - {}",
+                        style("ERROR").red(),
+                        style("Not a git repository!").bold()
+                    );
                     return Ok(());
                 }
             };
 
             let remote = repo.find_remote("origin")?;
-            let url = RepoUrl::from_url(&Url::parse(remote.url().expect("No remote url"))?)?;
+            let remote_url = remote.url().expect("No remote url");
+            let url: RepoUrl = if remote_url.starts_with("git@") {
+                // TODO: Hacky way to handle it, pls fix future me
+                let temp = remote_url.replace(":", "/").replace("git@", "https://");
+                RepoUrl::from_url(&Url::parse(&temp)?)?
+            } else {
+                RepoUrl::from_url(&Url::parse(remote_url)?)?
+            };
 
             let config = Config::load()?;
             let rule = config.rules.resolve(&url);
